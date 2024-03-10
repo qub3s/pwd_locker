@@ -168,50 +168,71 @@ fn help(){
     println!("* add <category>                               : adds a category");
     println!("* ls                                           : list all categorys");
     println!("* remove <category>                            : removes a category");
-    println!("* change <category> <key> <value>              : changes key value of key if value is delete, removes key");
+    println!("* change <category> <key> <value>              : changes key value of key if value is '', removes key");
     println!("* create <filename>                            : create a file");
 }
 
 fn change( change_string : String, map : &mut BTreeMap<String, String> ){
     let v : Vec<&str> = change_string.split(' ').collect();
 
+    let query = String::from(v[0]);
+    let out = map.get(&query);
+    let mut key_value : Vec<&str> = out.unwrap().split(',').collect();
+    
     if v.len() == 1{
         println!("Category value missing");
     }
-    else{
-        let query = String::from(v[0]);
-        let out = map.get(&query);
-
+    else
+    {
         if out == None{
             println!("not found!");
         }
 
-        let mut key_value : Vec<&str> = out.unwrap().split(',').collect();
+        if v.len() == 2 { 
+            println!("remove value");
+            for x in 0..key_value.len(){
+                if key_value[x] == v[1]{
+                    key_value.remove(x);
+                    key_value.remove(x);
+                }
+            }
+        }
 
-        if !&key_value.contains(&v[1]){
-            // -> remove the value
-            if v.len() == 2 { 
-                for x in 0..key_value.len(){
+        if v.len() == 3 {
+            if key_value.contains(&v[1]) {
+                for x in 0..key_value.len(){ 
                     if key_value[x] == v[1]{
-                        key_value.remove(x);
-                        key_value.remove(x);
+                        println!("change value");
+                        key_value[x+1] = v[2];
                     }
                 }
             }
             else{
-                for x in 0..key_value.len(){
-                    if key_value[x] == v[1]{
-                        key_value[x] = v[2];
-                    }
-                }
-            }
-        }
-        else{
-            if v.len() == 3{
-                key_value.push(v[1]);
+                println!("added value");
+                key_value.push(&v[1].clone());
+                key_value.push(&v[2].clone());
             }
         }
     }
+
+
+    for x in 0..key_value.len(){
+        println!("|{}",key_value[x]);
+     }
+
+    let mut replace : String = String::from(""); 
+
+    for x in 0..key_value.len(){
+        if x != 0{
+            replace.push(',');
+        }
+        replace.push_str(key_value[x]);
+    }
+
+
+    println!("{}", replace);
+    map.remove(&query);
+    map.insert(query,replace);
 }
 
 //fn cat( category : String, map : &mut BTreeMap<String, String> )
