@@ -19,7 +19,7 @@ fn create_pwd_storage( filename : &str) {
         Ok(f) => f,
     };
     
-    match file.write_all(b"storage"){
+    match file.write_all(b"storage\n\n"){
         Err(e) => panic!("Can't write file"),
         Ok(f) => f,
     };
@@ -139,8 +139,14 @@ fn list( category : &mut Vec<String> ){
 }
 
 fn add( category : &mut Vec<String>, new_category : String, map: &mut BTreeMap<String, String>){
-    category.push(new_category.clone());
-    map.insert( new_category, String::from("") );
+
+    if category.contains(&new_category){
+        println!("Category already exists");
+    }
+    else{
+        category.push(new_category.clone());
+        map.insert( new_category, String::from("") );
+    }
     return;
 }
 
@@ -154,17 +160,69 @@ fn rm( rm_category : String, category : &mut Vec<String>, map : &mut BTreeMap<St
     map.remove(rm_category.as_str());
 }
 
+fn help(){
+    println!("* setpwd <pwd>                                 : sets the pwd the file is read and written with");
+    println!("* read <filename>                              : reads a File");
+    println!("* write <filename>                             : writes a File");
+    println!("* cat <category>                               : prints entry to screen");
+    println!("* add <category>                               : adds a category");
+    println!("* ls                                           : list all categorys");
+    println!("* remove <category>                            : removes a category");
+    println!("* change <category> <key> <value>              : changes key value of key if value is delete, removes key");
+    println!("* create <filename>                            : create a file");
+}
 
+fn change( change_string : String, map : &mut BTreeMap<String, String> ){
+    let v : Vec<&str> = change_string.split(' ').collect();
 
+    if v.len() == 1{
+        println!("Category value missing");
+    }
+    else{
+        let query = String::from(v[0]);
+        let out = map.get(&query);
+
+        if out == None{
+            println!("not found!");
+        }
+
+        let mut key_value : Vec<&str> = out.unwrap().split(',').collect();
+
+        if !&key_value.contains(&v[1]){
+            // -> remove the value
+            if v.len() == 2 { 
+                for x in 0..key_value.len(){
+                    if key_value[x] == v[1]{
+                        key_value.remove(x);
+                        key_value.remove(x);
+                    }
+                }
+            }
+            else{
+                for x in 0..key_value.len(){
+                    if key_value[x] == v[1]{
+                        key_value[x] = v[2];
+                    }
+                }
+            }
+        }
+        else{
+            if v.len() == 3{
+                key_value.push(v[1]);
+            }
+        }
+    }
+}
 
 //fn cat( category : String, map : &mut BTreeMap<String, String> )
 
 /*
  * first line - the password
  * second line - category csv list
- * one line for every category entry ( category: "query":"key","query":"key")
+ * one line for every category entry ( category: a=b, c=d)
  *
  * Commands:
+ * help                                         : prints out the help 
  * setpwd <pwd>                                 : sets the pwd the file is read and written with
  * read <filename>                              : reads a File
  * write <filename>                             : writes a File
@@ -173,6 +231,7 @@ fn rm( rm_category : String, category : &mut Vec<String>, map : &mut BTreeMap<St
  * ls                                           : list all categorys
  * remove <category>                            : removes a category
  * change <category> <key> <value>              : changes key value of key if value is delete, removes key
+ * create <filename>                            : create a file 
  *
 */
 
@@ -199,7 +258,6 @@ fn main(){
             Ok(x) => x,
             Err(e) => panic!("Can't read from stdin"),
         };
-
         
         if input.starts_with("exit"){
             break;
@@ -227,7 +285,8 @@ fn main(){
             "ls" => list( &mut category ),
             "add" => add( &mut category, String::from(c.1) , &mut map),
             "rm" => rm( String::from(c.1), &mut category, &mut map ),
-            "change" => print!("change"),
+            "change" => change( String::from(c.1), &mut map ),
+            "help" => help(),
             _ => println!("   Unknown"),
         };
     }
